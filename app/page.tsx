@@ -60,15 +60,25 @@ export default function Home() {
 
       <div className="w-full max-w-4xl mx-auto space-y-8 relative z-10">
         {/* Header */}
+        {/* Header */}
         <div className="relative text-center space-y-4 mb-12">
-          <div className="absolute right-0 top-0 flex items-center gap-2">
-            <PostHistory />
-            <ThemeToggle />
+          <div className="flex justify-between items-center w-full mb-8 md:absolute md:top-0 md:mb-0">
+            {/* Mobile Logo (visible only on small screens) */}
+            <div className="md:hidden">
+              <span className="font-bold text-xl tracking-tight">PostCraft</span>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <PostHistory />
+              <ThemeToggle />
+            </div>
           </div>
+
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="pt-4 md:pt-0"
           >
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 via-neutral-600 to-neutral-900 dark:from-white dark:via-neutral-400 dark:to-white pb-2">
               PostCraft
@@ -78,7 +88,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto font-light"
+            className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto font-light px-4"
           >
             Turn your ideas into polished LinkedIn posts in seconds.
           </motion.p>

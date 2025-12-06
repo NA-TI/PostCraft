@@ -63,12 +63,12 @@ export default function AI_Input_Search({
                         rows={1}
                     />
 
-                    <div className="flex items-center justify-between px-2 pb-2 mt-2">
-                        <div className="flex items-center gap-2">
-                            <div className="relative">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between px-2 pb-2 mt-2 gap-3 sm:gap-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <div className="relative shrink-0">
                                 <button
                                     onClick={() => setShowToneDropdown(!showToneDropdown)}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 whitespace-nowrap"
                                 >
                                     <span>{selectedTone.emoji}</span>
                                     <span>{selectedTone.label}</span>
@@ -107,10 +107,10 @@ export default function AI_Input_Search({
                                 </AnimatePresence>
                             </div>
 
-                            <div className="relative">
+                            <div className="relative shrink-0">
                                 <button
                                     onClick={() => setShowLengthDropdown(!showLengthDropdown)}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 whitespace-nowrap"
                                 >
                                     <span>📏</span>
                                     <span>{selectedLength}</span>
@@ -152,7 +152,7 @@ export default function AI_Input_Search({
                         <button
                             onClick={handleSubmit}
                             disabled={!topic.trim() || isGenerating}
-                            className="p-2.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-black disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                            className="w-full sm:w-auto p-2.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-black disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center"
                         >
                             {isGenerating ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />

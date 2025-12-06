@@ -12,7 +12,7 @@ const openai = new OpenAI({
 export async function generatePosts(systemPrompt: string, userPrompt: string) {
     try {
         const completion = await openai.chat.completions.create({
-            model: "meta-llama/llama-3.2-3b-instruct:free", // Free model for testing
+            model: "google/gemini-2.0-flash-exp:free", // Best free model for content generation
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt },
@@ -24,8 +24,19 @@ export async function generatePosts(systemPrompt: string, userPrompt: string) {
         if (!content) throw new Error("No content generated");
 
         return JSON.parse(content);
-    } catch (error) {
+    } catch (error: any) {
         console.error("OpenRouter API Error:", error);
+
+        // Handle rate limit errors specifically
+        if (error?.status === 429 || error?.message?.includes("429")) {
+            throw new Error("Rate limit exceeded. Please wait a moment and try again.");
+        }
+
+        // Handle other API errors
+        if (error?.status) {
+            throw new Error(`API Error (${error.status}): ${error.message || "Unknown error"}`);
+        }
+
         throw error;
     }
 }
