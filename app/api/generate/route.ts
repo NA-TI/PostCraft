@@ -6,7 +6,7 @@ import { GenerateRequest, GeneratedPost } from "@/types";
 export async function POST(request: Request) {
     try {
         const body: GenerateRequest = await request.json();
-        const { topic, tone } = body;
+        const { topic, tone, length } = body;
 
         if (!topic || topic.length > 500) {
             return NextResponse.json(
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const { system, user } = buildPrompt(topic, tone);
+        const { system, user } = buildPrompt(topic, tone, length || "Medium");
         const result = await generatePosts(system, user);
 
         // Add character counts to response
@@ -30,8 +30,9 @@ export async function POST(request: Request) {
         });
     } catch (error) {
         console.error("Generation error:", error);
+        const errorMessage = error instanceof Error ? error.message : "Failed to generate posts";
         return NextResponse.json(
-            { success: false, error: "Failed to generate posts" },
+            { success: false, error: errorMessage },
             { status: 500 }
         );
     }

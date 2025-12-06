@@ -12,7 +12,7 @@ const openai = new OpenAI({
 export async function generatePosts(systemPrompt: string, userPrompt: string) {
     try {
         const completion = await openai.chat.completions.create({
-            model: "openai/gpt-4o-mini", // Using gpt-4o-mini via OpenRouter
+            model: "meta-llama/llama-3.2-3b-instruct:free", // Free model for testing
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt },
