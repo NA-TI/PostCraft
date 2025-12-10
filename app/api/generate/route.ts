@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generatePosts } from "@/lib/openrouter";
+import { generatePostsWithFallback } from "@/lib/openrouter";
 import { buildPrompt } from "@/lib/prompts";
 import { GenerateRequest, GeneratedPost } from "@/types";
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
         }
 
         const { system, user } = buildPrompt(topic, tone, length || "Medium");
-        const result = await generatePosts(system, user);
+        const result = await generatePostsWithFallback(system, user);
 
         // Add character counts to response
         const postsWithCounts = result.posts.map((post: GeneratedPost) => ({
@@ -24,10 +24,18 @@ export async function POST(request: Request) {
             characterCount: post.full.length,
         }));
 
-        return NextResponse.json({
+        // Create response with model tracking header
+        const response = NextResponse.json({
             success: true,
             posts: postsWithCounts,
         });
+
+        // Add header to track which model was used (for debugging)
+        if (result.modelUsed) {
+            response.headers.set("X-Model-Used", result.modelUsed);
+        }
+
+        return response;
     } catch (error) {
         console.error("Generation error:", error);
         const errorMessage = error instanceof Error ? error.message : "Failed to generate posts";
