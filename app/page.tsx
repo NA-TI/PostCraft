@@ -20,7 +20,7 @@ export default function Home() {
   const [currentTone, setCurrentTone] = useState<Tone>("Professional");
   const [modelUsed, setModelUsed] = useState<string | null>(null);
 
-  const handleGenerate = async (topic: string, tone: string, length: "Short" | "Medium" | "Long") => {
+  const handleGenerate = async (topic: string, tone: string, length: "Short" | "Medium" | "Long", referencePost?: string) => {
     setIsGenerating(true);
     setError(null);
     setGeneratedPosts([]);
@@ -31,7 +31,7 @@ export default function Home() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, tone: tone as Tone, length }),
+        body: JSON.stringify({ topic, tone: tone as Tone, length, referencePost }),
       });
 
       const data = await response.json();

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import CopyButton from "./copy-button";
 import { GeneratedPost, Tone } from "@/types";
 import { LinkedInPreview } from "./linkedin-preview";
@@ -22,6 +22,8 @@ export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDispl
     const [savedIndices, setSavedIndices] = useState<number[]>([]);
     const [exportingIndex, setExportingIndex] = useState<number | null>(null);
     const [editablePosts, setEditablePosts] = useState<GeneratedPost[]>([]);
+    const [loadingHooks, setLoadingHooks] = useState<Record<number, boolean>>({});
+    const [hookOptions, setHookOptions] = useState<Record<number, Array<{ style: string; content: string }>>>({});
 
     // Initialize editable posts when new posts arrive
     useState(() => {
@@ -34,6 +36,7 @@ export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDispl
         setEditablePosts(posts);
         prevPostsRef.current = posts;
         setSavedIndices([]);
+        setHookOptions({});
     }
 
     const handleEdit = (index: number, field: keyof GeneratedPost, value: string) => {
@@ -41,17 +44,46 @@ export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDispl
             const next = [...prev];
             const updatedPost = { ...next[index], [field]: value };
 
-            // If field is hook, body, or cta, we SHOULD update the 'full' text as well
-            // but for simplicity and control, we can also just update 'full' directly if needed.
-            // Let's assume the user edits the 'full' text mostly for LinkedIn.
             if (field === "full") {
                 next[index] = updatedPost;
             } else {
                 next[index] = updatedPost;
-                // Reconstruct full post if hook/body/cta changed
                 const p = next[index];
                 next[index].full = `${p.hook}\n\n${p.body}\n\n${p.cta}`;
             }
+            return next;
+        });
+    };
+
+    const handleMagicHook = async (index: number) => {
+        const post = editablePosts[index];
+        setLoadingHooks(prev => ({ ...prev, [index]: true }));
+        try {
+            const response = await fetch("/api/generate/hook", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ body: post.body, tone }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                setHookOptions(prev => ({ ...prev, [index]: data.hooks }));
+                toast.success("Generated 3 new hook styles!");
+            } else {
+                throw new Error(data.error || "Failed to generate hooks");
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Magic Hook failed");
+        } finally {
+            setLoadingHooks(prev => ({ ...prev, [index]: false }));
+        }
+    };
+
+    const selectHook = (index: number, content: string) => {
+        handleEdit(index, "hook", content);
+        setHookOptions(prev => {
+            const next = { ...prev };
+            delete next[index];
             return next;
         });
     };
@@ -183,13 +215,76 @@ export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDispl
                                         <textarea
                                             value={post.hook}
                                             onChange={(e) => handleEdit(index, "hook", e.target.value)}
-                                            className="w-full bg-yellow-50/50 dark:bg-yellow-500/5 text-neutral-900 dark:text-yellow-100 p-3 rounded-xl font-medium text-sm border-2 border-transparent focus:border-yellow-200 dark:focus:border-yellow-500/30 outline-none resize-none transition-all leading-relaxed"
+                                            className={`w-full ${post.hook.length > 140
+                                                ? "bg-red-50/50 dark:bg-red-500/5 focus:border-red-200 dark:focus:border-red-500/30 text-red-900 dark:text-red-100"
+                                                : "bg-yellow-50/50 dark:bg-yellow-500/5 focus:border-yellow-200 dark:focus:border-yellow-500/30 text-neutral-900 dark:text-yellow-100"
+                                                } p-3 rounded-xl font-medium text-sm border-2 border-transparent outline-none resize-none transition-all leading-relaxed`}
                                             rows={2}
                                             placeholder="Write your hook..."
                                         />
-                                        <div className="absolute top-2 right-2 opacity-0 group-hover/edit:opacity-100 transition-opacity">
-                                            <Sparkles className="w-3 h-3 text-yellow-500/50" />
+                                        <div className="absolute top-2 right-2 flex items-center gap-2">
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${post.hook.length > 140
+                                                ? "bg-red-500/20 text-red-600 dark:text-red-400"
+                                                : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-500"
+                                                }`}>
+                                                {post.hook.length}/140
+                                            </span>
+                                            <button
+                                                onClick={() => handleMagicHook(index)}
+                                                disabled={loadingHooks[index]}
+                                                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors group/magic"
+                                                title="Generate Magic Hooks"
+                                            >
+                                                {loadingHooks[index] ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                                                ) : (
+                                                    <Sparkles className="w-3.5 h-3.5 text-blue-500/50 group-hover/magic:text-blue-500 transition-colors" />
+                                                )}
+                                            </button>
                                         </div>
+
+                                        <AnimatePresence>
+                                            {hookOptions[index] && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    className="absolute top-10 right-0 w-72 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl z-50 p-3 space-y-2"
+                                                >
+                                                    <div className="flex justify-between items-center px-1 mb-2">
+                                                        <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Choose a style</span>
+                                                        <button
+                                                            onClick={() => setHookOptions(prev => {
+                                                                const next = { ...prev };
+                                                                delete next[index];
+                                                                return next;
+                                                            })}
+                                                            className="text-[10px] font-bold text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                                                        >
+                                                            Close
+                                                        </button>
+                                                    </div>
+                                                    {hookOptions[index].map((opt, i) => (
+                                                        <button
+                                                            key={i}
+                                                            onClick={() => selectHook(index, opt.content)}
+                                                            className="w-full text-left p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-transparent hover:border-blue-500/30 hover:bg-blue-50/30 dark:hover:bg-blue-500/5 transition-all group/item"
+                                                        >
+                                                            <div className="text-[10px] font-bold text-blue-500 uppercase tracking-tight mb-1">{opt.style}</div>
+                                                            <div className="text-xs text-neutral-600 dark:text-neutral-300 line-clamp-2 leading-snug group-hover/item:text-neutral-900 dark:group-hover/item:text-neutral-100">
+                                                                {opt.content}
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+
+                                        {post.hook.length > 140 && (
+                                            <div className="absolute -bottom-5 left-0 text-[10px] font-medium text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
+                                                <span>⚠️ Likely cut off on mobile preview</span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <textarea

@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
     POSTS: "postcraft_posts",
     SETTINGS: "postcraft_settings",
     THEME: "postcraft_theme",
+    REFERENCE_POST: "postcraft_reference_post",
 } as const;
 
 export const API_ENDPOINTS = {

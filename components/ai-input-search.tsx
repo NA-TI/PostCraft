@@ -7,7 +7,7 @@ import { TONES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 interface AIInputSearchProps {
-    onGenerate: (topic: string, tone: string, length: "Short" | "Medium" | "Long") => void;
+    onGenerate: (topic: string, tone: string, length: "Short" | "Medium" | "Long", referencePost?: string) => void;
     isGenerating: boolean;
 }
 
@@ -20,7 +20,15 @@ export default function AI_Input_Search({
     const [showToneDropdown, setShowToneDropdown] = useState(false);
     const [selectedLength, setSelectedLength] = useState<"Short" | "Medium" | "Long">("Medium");
     const [showLengthDropdown, setShowLengthDropdown] = useState(false);
+    const [showBrandVoice, setShowBrandVoice] = useState(false);
+    const [referencePost, setReferencePost] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Load reference post from storage
+    useEffect(() => {
+        const saved = localStorage.getItem("postcraft_reference_post");
+        if (saved) setReferencePost(saved);
+    }, []);
 
     const adjustHeight = () => {
         const textarea = textareaRef.current;
@@ -37,13 +45,18 @@ export default function AI_Input_Search({
         }
     };
 
+    const handleBrandVoiceChange = (text: string) => {
+        setReferencePost(text);
+        localStorage.setItem("postcraft_reference_post", text);
+    };
+
     const handleSubmit = () => {
         if (!topic.trim() || isGenerating) return;
-        onGenerate(topic, selectedTone.value, selectedLength);
+        onGenerate(topic, selectedTone.value, selectedLength, referencePost);
     };
 
     return (
-        <div className="w-full max-w-2xl mx-auto relative group z-20">
+        <div className="w-full max-w-2xl mx-auto relative group z-20 space-y-4">
             {/* Glow Effect */}
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 rounded-2xl opacity-20 group-hover:opacity-40 blur-xl transition-opacity duration-500 animate-gradient-xy" />
 
@@ -147,6 +160,19 @@ export default function AI_Input_Search({
                                     )}
                                 </AnimatePresence>
                             </div>
+
+                            <button
+                                onClick={() => setShowBrandVoice(!showBrandVoice)}
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border",
+                                    showBrandVoice
+                                        ? "bg-blue-500/10 border-blue-500/50 text-blue-600 dark:text-blue-400"
+                                        : "text-neutral-600 dark:text-neutral-300 border-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                )}
+                            >
+                                <Sparkles className={cn("w-3.5 h-3.5", showBrandVoice && "fill-current animate-pulse")} />
+                                <span>Brand Voice</span>
+                            </button>
                         </div>
 
                         <button
@@ -163,6 +189,39 @@ export default function AI_Input_Search({
                     </div>
                 </div>
             </div>
+
+            <AnimatePresence>
+                {showBrandVoice && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="bg-white/50 dark:bg-neutral-900/50 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 shadow-xl">
+                            <div className="flex justify-between items-center mb-2 px-1">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Your Style Reference</span>
+                                {referencePost && (
+                                    <span className="text-[10px] font-medium text-green-500 flex items-center gap-1">
+                                        <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+                                        Active
+                                    </span>
+                                )}
+                            </div>
+                            <textarea
+                                value={referencePost}
+                                onChange={(e) => handleBrandVoiceChange(e.target.value)}
+                                placeholder="Paste your best-performing post here. We'll mimic its structure, tone, and formatting..."
+                                className="w-full bg-neutral-50/50 dark:bg-black/50 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 text-sm text-neutral-600 dark:text-neutral-400 focus:ring-1 focus:ring-blue-500/50 outline-none resize-none transition-all placeholder:text-neutral-400/50 font-light"
+                                rows={4}
+                            />
+                            <p className="mt-2 px-1 text-[10px] text-neutral-400 leading-relaxed italic">
+                                Tip: Use a post with lots of engagement. We&apos;ll extract your unique &quot;DNA&quot; and apply it to new generations.
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

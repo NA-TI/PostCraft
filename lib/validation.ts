@@ -5,6 +5,12 @@ export const generateRequestSchema = z.object({
     topic: z.string().min(3, "Topic must be at least 3 characters").max(500, "Topic must be less than 500 characters"),
     tone: z.enum(["Professional", "Friendly", "Smart", "Storytelling"] as const),
     length: z.enum(["Short", "Medium", "Long"] as const).default("Medium"),
+    referencePost: z.string().optional(),
+});
+
+export const hookRequestSchema = z.object({
+    body: z.string().min(10, "Body must be at least 10 characters"),
+    tone: z.enum(["Professional", "Friendly", "Smart", "Storytelling"] as const),
 });
 
 export type GenerateRequest = z.infer<typeof generateRequestSchema>;

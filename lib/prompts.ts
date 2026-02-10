@@ -4,7 +4,7 @@ import { POST_LENGTHS } from "./constants";
 const SYSTEM_PROMPT = `You are a world-class LinkedIn Content Strategist who specializes in high-engagement, "scroll-stopping" posts. Your goal is to turn complex topics into simple, relatable, and highly shareable content.
 
 CRITICAL RULES:
-1. THE HOOK (First 1-2 lines): Must be a "Pattern Interrupt." Use a bold claim, a surprising statistic, a relatable struggle, or a counter-intuitive insight. Keep it under 140 characters for mobile preview.
+1. THE HOOK (First 1-2 lines): Must be a "Pattern Interrupt." Keep it under 140 characters for mobile preview (CRITICAL). Use a bold claim, a surprising statistic, a relatable struggle, or a counter-intuitive insight.
 2. WHITE SPACE: Use frequent line breaks. No paragraph should be longer than 2 sentences.
 3. THE "MEAT": Deliver value quickly. Use bullet points or short, punchy sentences to build momentum.
 4. AUTHENTICITY: Avoid "Corporate Speak." Use a conversational, human tone.
@@ -17,7 +17,7 @@ Return exactly 2 distinct versions of the post as a JSON object:
 {
   "posts": [
     {
-      "hook": "Scroll-stopping first 1-2 lines",
+      "hook": "Scroll-stopping first 1-2 lines (MUST BE < 140 chars)",
       "body": "Value-packed body with lots of white space",
       "cta": "Engaging final question/takeaway",
       "full": "The complete post text",
@@ -58,9 +58,27 @@ const TONE_MODIFIERS: Record<Tone, string> = {
   `
 };
 
-export function buildPrompt(topic: string, tone: Tone, length: "Short" | "Medium" | "Long"): { system: string; user: string } {
+export function buildPrompt(
+  topic: string,
+  tone: Tone,
+  length: "Short" | "Medium" | "Long",
+  referencePost?: string
+): { system: string; user: string } {
   const lengthKey = length.toUpperCase() as keyof typeof POST_LENGTHS;
   const lengthConfig = POST_LENGTHS[lengthKey];
+
+  let dynamicSystemPrompt = SYSTEM_PROMPT;
+
+  if (referencePost) {
+    dynamicSystemPrompt += `
+    
+    SPECIAL BRAND VOICE INSTRUCTION:
+    The user has provided a reference post below. Strictly mimic the writing style, average sentence length, white space usage, and overall "vibe" of this post:
+    ---
+    ${referencePost}
+    ---
+    `;
+  }
 
   const userPrompt = `
     Topic: ${topic}
@@ -77,7 +95,40 @@ export function buildPrompt(topic: string, tone: Tone, length: "Short" | "Medium
   `;
 
   return {
-    system: SYSTEM_PROMPT,
+    system: dynamicSystemPrompt,
+    user: userPrompt
+  };
+}
+
+export function buildHookPrompt(body: string, tone: Tone): { system: string; user: string } {
+  const systemPrompt = `You are a LinkedIn Growth Specialist. Your job is to take a post body and write 3 high-engagement hooks (the first 1-2 lines).
+  
+  CRITICAL RULES:
+  1. Each hook MUST be under 140 characters.
+  2. Each hook MUST be distinct in style.
+  3. Styles to provide:
+     - The Bold Claim (Authoritative, counter-intuitive)
+     - The Surprising Stat/Result (Data-driven, factual)
+     - The Relatable Struggle (Empathy-driven, "I've been there")
+  
+  Return exactly 3 options as a JSON object:
+  {
+    "hooks": [
+      { "style": "Bold Claim", "content": "..." },
+      { "style": "Surprising Stat", "content": "..." },
+      { "style": "Relatable Struggle", "content": "..." }
+    ]
+  }`;
+
+  const userPrompt = `
+    Post Body: ${body}
+    Tone: ${tone}
+    
+    Generate 3 distinct hooks for this body text.
+  `;
+
+  return {
+    system: systemPrompt,
     user: userPrompt
   };
 }
