@@ -4,6 +4,7 @@ import { TONES } from "./constants";
 export const generateRequestSchema = z.object({
     topic: z.string().min(3, "Topic must be at least 3 characters").max(500, "Topic must be less than 500 characters"),
     tone: z.enum(["Professional", "Friendly", "Smart", "Storytelling"] as const),
+    length: z.enum(["Short", "Medium", "Long"] as const).default("Medium"),
 });
 
 export type GenerateRequest = z.infer<typeof generateRequestSchema>;

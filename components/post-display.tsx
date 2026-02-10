@@ -13,13 +13,48 @@ interface PostDisplayProps {
     posts: GeneratedPost[];
     topic: string;
     tone: Tone;
+    modelUsed?: string | null;
 }
 
-export default function PostDisplay({ posts, topic, tone }: PostDisplayProps) {
+export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDisplayProps) {
     const [viewMode, setViewMode] = useState<"text" | "preview">("text");
     const { savePost } = usePostHistory();
     const [savedIndices, setSavedIndices] = useState<number[]>([]);
     const [exportingIndex, setExportingIndex] = useState<number | null>(null);
+    const [editablePosts, setEditablePosts] = useState<GeneratedPost[]>([]);
+
+    // Initialize editable posts when new posts arrive
+    useState(() => {
+        setEditablePosts(posts);
+    });
+
+    // Update editable posts when props change
+    const prevPostsRef = useRef<GeneratedPost[]>([]);
+    if (posts !== prevPostsRef.current) {
+        setEditablePosts(posts);
+        prevPostsRef.current = posts;
+        setSavedIndices([]);
+    }
+
+    const handleEdit = (index: number, field: keyof GeneratedPost, value: string) => {
+        setEditablePosts((prev) => {
+            const next = [...prev];
+            const updatedPost = { ...next[index], [field]: value };
+
+            // If field is hook, body, or cta, we SHOULD update the 'full' text as well
+            // but for simplicity and control, we can also just update 'full' directly if needed.
+            // Let's assume the user edits the 'full' text mostly for LinkedIn.
+            if (field === "full") {
+                next[index] = updatedPost;
+            } else {
+                next[index] = updatedPost;
+                // Reconstruct full post if hook/body/cta changed
+                const p = next[index];
+                next[index].full = `${p.hook}\n\n${p.body}\n\n${p.cta}`;
+            }
+            return next;
+        });
+    };
 
     const handleSave = (post: GeneratedPost, index: number) => {
         savePost({
@@ -29,10 +64,8 @@ export default function PostDisplay({ posts, topic, tone }: PostDisplayProps) {
         });
         setSavedIndices((prev) => [...prev, index]);
     };
-
     const handleExportImage = async (index: number) => {
         setExportingIndex(index);
-        // Target the specific export preview element
         const element = document.getElementById(`export-preview-${index}`);
 
         if (!element) {
@@ -44,11 +77,10 @@ export default function PostDisplay({ posts, topic, tone }: PostDisplayProps) {
         try {
             const canvas = await html2canvas(element, {
                 scale: 2,
-                backgroundColor: null,
+                backgroundColor: "#ffffff",
                 useCORS: true,
                 logging: false,
                 onclone: (clonedDoc) => {
-                    // Ensure the cloned element is visible
                     const clonedElement = clonedDoc.getElementById(`export-preview-${index}`);
                     if (clonedElement) {
                         clonedElement.style.display = "block";
@@ -72,90 +104,117 @@ export default function PostDisplay({ posts, topic, tone }: PostDisplayProps) {
         }
     };
 
-    if (!posts || posts.length === 0) return null;
-
     return (
         <div className="w-full max-w-4xl mx-auto mt-8 space-y-6">
-            <div className="flex justify-end gap-2">
-                <Button
-                    variant={viewMode === "text" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("text")}
-                    className="gap-2"
-                >
-                    <FileText className="w-4 h-4" />
-                    Text View
-                </Button>
-                <Button
-                    variant={viewMode === "preview" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("preview")}
-                    className="gap-2"
-                >
-                    <Eye className="w-4 h-4" />
-                    LinkedIn Preview
-                </Button>
+            <div className="flex justify-between items-center bg-white/50 dark:bg-neutral-900/50 p-2 rounded-2xl border border-neutral-200 dark:border-neutral-800 backdrop-blur-sm">
+                <div className="flex items-center gap-3 px-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Engine</p>
+                        <p className="text-sm font-medium dark:text-neutral-200">{modelUsed?.split('/')[1] || "Default Engine"}</p>
+                    </div>
+                </div>
+                <div className="flex gap-2">
+                    <Button
+                        variant={viewMode === "text" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("text")}
+                        className="gap-2 rounded-xl"
+                    >
+                        <FileText className="w-4 h-4" />
+                        Text View
+                    </Button>
+                    <Button
+                        variant={viewMode === "preview" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode("preview")}
+                        className="gap-2 rounded-xl"
+                    >
+                        <Eye className="w-4 h-4" />
+                        LinkedIn Preview
+                    </Button>
+                </div>
             </div>
 
-            {/* Hidden Export Container */}
+            {/* Hidden Export Container (Uses actual editable content) */}
             <div className="fixed left-[-9999px] top-[-9999px]">
-                {posts.map((post, index) => (
+                {editablePosts.map((post, index) => (
                     <div
                         key={`export-${index}`}
                         id={`export-preview-${index}`}
-                        className="w-[600px] p-8 bg-transparent flex items-center justify-center" // Add padding and flex centering
+                        className="w-[600px] p-8 bg-white flex items-center justify-center"
                     >
                         <LinkedInPreview
                             content={post.full}
                             hashtags={post.hashtags}
-                            className="shadow-2xl" // Add a nice shadow for the export
+                            className="shadow-2xl border border-neutral-200 rounded-xl"
                             forceExpanded={true}
                         />
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {posts.map((post, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
+                {editablePosts.map((post, index) => (
                     <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className="group bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col hover:border-neutral-300 dark:hover:border-neutral-700"
+                        className="group bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 overflow-hidden flex flex-col hover:border-blue-500/20"
                     >
-                        <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center bg-neutral-50/50 dark:bg-neutral-800/30">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium border border-blue-500/20">
-                                <Sparkles className="w-3 h-3" />
+                        <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center bg-neutral-50/30 dark:bg-neutral-800/20">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] font-bold uppercase tracking-widest border border-neutral-200 dark:border-neutral-700">
                                 Option {index + 1}
                             </span>
-                            <span className="text-xs font-medium text-neutral-400 font-mono">
-                                {post.characterCount} chars
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                                    {post.full.length} chars
+                                </span>
+                            </div>
                         </div>
 
-                        <div className="p-6 flex-grow">
+                        <div className="p-6 flex-grow overflow-hidden">
                             {viewMode === "text" ? (
-                                <div className="prose dark:prose-invert prose-sm max-w-none whitespace-pre-wrap font-sans text-neutral-800 dark:text-neutral-200 leading-relaxed">
-                                    {/* Highlight the hook */}
-                                    <span className="bg-yellow-100 dark:bg-yellow-500/20 text-neutral-900 dark:text-yellow-200 px-1 -mx-1 rounded font-medium">
-                                        {post.hook}
-                                    </span>
-                                    {post.body}
-                                    <br /><br />
-                                    <span className="font-medium text-blue-600 dark:text-blue-400">
-                                        {post.cta}
-                                    </span>
+                                <div className="space-y-4 h-full flex flex-col">
+                                    <div className="relative group/edit">
+                                        <textarea
+                                            value={post.hook}
+                                            onChange={(e) => handleEdit(index, "hook", e.target.value)}
+                                            className="w-full bg-yellow-50/50 dark:bg-yellow-500/5 text-neutral-900 dark:text-yellow-100 p-3 rounded-xl font-medium text-sm border-2 border-transparent focus:border-yellow-200 dark:focus:border-yellow-500/30 outline-none resize-none transition-all leading-relaxed"
+                                            rows={2}
+                                            placeholder="Write your hook..."
+                                        />
+                                        <div className="absolute top-2 right-2 opacity-0 group-hover/edit:opacity-100 transition-opacity">
+                                            <Sparkles className="w-3 h-3 text-yellow-500/50" />
+                                        </div>
+                                    </div>
 
-                                    {/* Hashtags */}
-                                    {post.hashtags && (
-                                        <>
-                                            <br /><br />
-                                            <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">
-                                                {post.hashtags}
-                                            </span>
-                                        </>
-                                    )}
+                                    <textarea
+                                        value={post.body}
+                                        onChange={(e) => handleEdit(index, "body", e.target.value)}
+                                        className="w-full bg-transparent text-neutral-700 dark:text-neutral-300 p-3 rounded-xl text-sm border-2 border-transparent focus:border-neutral-100 dark:focus:border-neutral-800 outline-none resize-none transition-all flex-grow leading-relaxed font-sans"
+                                        rows={8}
+                                        placeholder="Write your body..."
+                                    />
+
+                                    <textarea
+                                        value={post.cta}
+                                        onChange={(e) => handleEdit(index, "cta", e.target.value)}
+                                        className="w-full bg-blue-50/30 dark:bg-blue-500/5 text-blue-600 dark:text-blue-400 p-3 rounded-xl font-medium text-sm border-2 border-transparent focus:border-blue-100 dark:focus:border-blue-500/20 outline-none resize-none transition-all leading-relaxed"
+                                        rows={2}
+                                        placeholder="Add a call to action..."
+                                    />
+
+                                    <textarea
+                                        value={post.hashtags}
+                                        onChange={(e) => handleEdit(index, "hashtags", e.target.value)}
+                                        className="w-full bg-transparent text-neutral-400 p-3 rounded-xl text-xs border-2 border-transparent focus:border-neutral-100 dark:focus:border-neutral-800 outline-none resize-none transition-all leading-relaxed"
+                                        rows={1}
+                                        placeholder="#hashtags"
+                                    />
                                 </div>
                             ) : (
                                 <LinkedInPreview
@@ -165,14 +224,14 @@ export default function PostDisplay({ posts, topic, tone }: PostDisplayProps) {
                             )}
                         </div>
 
-                        <div className="p-4 bg-neutral-50/50 dark:bg-neutral-800/30 border-t border-neutral-100 dark:border-neutral-800 flex justify-between items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                            <div className="flex gap-2">
+                        <div className="p-4 bg-neutral-50/30 dark:bg-neutral-800/20 border-t border-neutral-100 dark:border-neutral-800 flex justify-between items-center gap-2">
+                            <div className="flex gap-1.5">
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleSave(post, index)}
                                     disabled={savedIndices.includes(index)}
-                                    className={`gap-2 transition-colors ${savedIndices.includes(index) ? "text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"}`}
+                                    className={`h-9 px-3 rounded-xl gap-2 transition-all ${savedIndices.includes(index) ? "bg-green-500/10 text-green-600 border border-green-500/20" : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}
                                 >
                                     {savedIndices.includes(index) ? (
                                         <>
@@ -191,7 +250,7 @@ export default function PostDisplay({ posts, topic, tone }: PostDisplayProps) {
                                     size="sm"
                                     onClick={() => handleExportImage(index)}
                                     disabled={exportingIndex === index}
-                                    className="gap-2 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200"
+                                    className="h-9 px-3 rounded-xl gap-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                                 >
                                     {exportingIndex === index ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -201,7 +260,7 @@ export default function PostDisplay({ posts, topic, tone }: PostDisplayProps) {
                                     Export
                                 </Button>
                             </div>
-                            <CopyButton text={post.full} />
+                            <CopyButton text={post.full} className="h-9 rounded-xl" />
                         </div>
                     </motion.div>
                 ))}

@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
 import { generatePostsWithFallback } from "@/lib/openrouter";
+import { generateRequestSchema } from "@/lib/validation";
 import { buildPrompt } from "@/lib/prompts";
-import { GenerateRequest, GeneratedPost } from "@/types";
+import { GeneratedPost } from "@/types";
 
 export async function POST(request: Request) {
     try {
-        const body: GenerateRequest = await request.json();
-        const { topic, tone, length } = body;
+        const body = await request.json();
+        const validation = generateRequestSchema.safeParse(body);
 
-        if (!topic || topic.length > 500) {
+        if (!validation.success) {
             return NextResponse.json(
-                { success: false, error: "Invalid topic length" },
+                {
+                    success: false,
+                    error: validation.error.issues.map((e) => e.message).join(", ")
+                },
                 { status: 400 }
             );
         }
+
+        const { topic, tone, length } = validation.data;
 
         const { system, user } = buildPrompt(topic, tone, length || "Medium");
         const result = await generatePostsWithFallback(system, user);
@@ -28,6 +34,7 @@ export async function POST(request: Request) {
         const response = NextResponse.json({
             success: true,
             posts: postsWithCounts,
+            modelUsed: result.modelUsed,
         });
 
         // Add header to track which model was used (for debugging)

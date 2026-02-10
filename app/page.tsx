@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PostHistory } from "@/components/post-history";
 import { GridPattern } from "@/components/ui/grid-pattern";
+import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 
 export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -16,6 +18,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [currentTopic, setCurrentTopic] = useState("");
   const [currentTone, setCurrentTone] = useState<Tone>("Professional");
+  const [modelUsed, setModelUsed] = useState<string | null>(null);
 
   const handleGenerate = async (topic: string, tone: string, length: "Short" | "Medium" | "Long") => {
     setIsGenerating(true);
@@ -38,6 +41,7 @@ export default function Home() {
       }
 
       setGeneratedPosts(data.posts);
+      setModelUsed(data.modelUsed);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -123,7 +127,34 @@ export default function Home() {
           posts={generatedPosts}
           topic={currentTopic}
           tone={currentTone}
+          modelUsed={modelUsed}
         />
+
+        {/* Generate More Button */}
+        <AnimatePresence>
+          {generatedPosts.length > 0 && !isGenerating && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="flex justify-center pb-20"
+            >
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  setGeneratedPosts([]);
+                  setModelUsed(null);
+                }}
+                className="rounded-full px-8 gap-2 group"
+              >
+                <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                Generate More
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );
