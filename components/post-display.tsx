@@ -8,6 +8,7 @@ import { FileText, Eye, Bookmark, Check, Sparkles, Download, Loader2 } from "luc
 import { usePostHistory } from "@/hooks/use-post-history";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface PostDisplayProps {
     posts: GeneratedPost[];
@@ -137,36 +138,34 @@ export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDispl
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto mt-8 space-y-6">
-            <div className="flex justify-between items-center bg-white/50 dark:bg-neutral-900/50 p-2 rounded-2xl border border-neutral-200 dark:border-neutral-800 backdrop-blur-sm">
-                <div className="flex items-center gap-3 px-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                        <Sparkles className="h-4 w-4" />
-                    </div>
-                    <div>
-                        <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Engine</p>
-                        <p className="text-sm font-medium dark:text-neutral-200">{modelUsed?.split('/')[1] || "Default Engine"}</p>
-                    </div>
-                </div>
-                <div className="flex gap-2">
-                    <Button
-                        variant={viewMode === "text" ? "secondary" : "ghost"}
-                        size="sm"
+        <div className="w-full max-w-4xl mx-auto mt-12 space-y-8">
+            {/* Results Header Control Bar */}
+            <div className="sticky top-4 z-30 flex justify-center items-center bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl p-1.5 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-xl mb-8 mx-2 sm:mx-0">
+                <div className="flex bg-neutral-100/50 dark:bg-neutral-800/50 p-1 rounded-full border border-neutral-200 dark:border-neutral-700/50 w-full sm:w-auto">
+                    <button
                         onClick={() => setViewMode("text")}
-                        className="gap-2 rounded-xl"
+                        className={cn(
+                            "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all duration-300",
+                            viewMode === "text"
+                                ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
+                                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+                        )}
                     >
-                        <FileText className="w-4 h-4" />
+                        <FileText className="w-3.5 h-3.5" />
                         Text View
-                    </Button>
-                    <Button
-                        variant={viewMode === "preview" ? "secondary" : "ghost"}
-                        size="sm"
+                    </button>
+                    <button
                         onClick={() => setViewMode("preview")}
-                        className="gap-2 rounded-xl"
+                        className={cn(
+                            "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all duration-300",
+                            viewMode === "preview"
+                                ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm"
+                                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
+                        )}
                     >
-                        <Eye className="w-4 h-4" />
-                        LinkedIn Preview
-                    </Button>
+                        <Eye className="w-3.5 h-3.5" />
+                        Preview
+                    </button>
                 </div>
             </div>
 
@@ -195,14 +194,14 @@ export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDispl
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className="group bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 overflow-hidden flex flex-col hover:border-blue-500/20"
+                        className="group bg-white dark:bg-neutral-900 rounded-[2rem] border border-neutral-200 dark:border-neutral-800 shadow-xl dark:shadow-2xl overflow-hidden flex flex-col transition-all duration-500"
                     >
-                        <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center bg-neutral-50/30 dark:bg-neutral-800/20">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[10px] font-bold uppercase tracking-widest border border-neutral-200 dark:border-neutral-700">
+                        <div className="p-3 border-b border-neutral-100 dark:border-white/5 flex justify-between items-center bg-neutral-50/50 dark:bg-white/5">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 dark:bg-white/10 text-neutral-600 dark:text-neutral-300 text-[10px] font-bold uppercase tracking-widest border border-neutral-200 dark:border-white/5">
                                 Option {index + 1}
                             </span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                            <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
                                     {post.full.length} chars
                                 </span>
                             </div>
@@ -211,37 +210,48 @@ export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDispl
                         <div className="p-6 flex-grow overflow-hidden">
                             {viewMode === "text" ? (
                                 <div className="space-y-4 h-full flex flex-col">
-                                    <div className="relative group/edit">
-                                        <textarea
-                                            value={post.hook}
-                                            onChange={(e) => handleEdit(index, "hook", e.target.value)}
-                                            className={`w-full ${post.hook.length > 140
-                                                ? "bg-red-50/50 dark:bg-red-500/5 focus:border-red-200 dark:focus:border-red-500/30 text-red-900 dark:text-red-100"
-                                                : "bg-yellow-50/50 dark:bg-yellow-500/5 focus:border-yellow-200 dark:focus:border-yellow-500/30 text-neutral-900 dark:text-yellow-100"
-                                                } p-3 rounded-xl font-medium text-sm border-2 border-transparent outline-none resize-none transition-all leading-relaxed`}
-                                            rows={2}
-                                            placeholder="Write your hook..."
-                                        />
-                                        <div className="absolute top-2 right-2 flex items-center gap-2">
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${post.hook.length > 140
-                                                ? "bg-red-500/20 text-red-600 dark:text-red-400"
-                                                : "bg-yellow-500/20 text-yellow-700 dark:text-yellow-500"
-                                                }`}>
-                                                {post.hook.length}/140
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1 h-3 bg-yellow-500/50 rounded-full" />
+                                            <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">The Hook</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className={cn(
+                                                "text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors",
+                                                post.hook.length > 140
+                                                    ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                                                    : "bg-yellow-500/10 text-yellow-700 dark:text-yellow-500"
+                                            )}>
+                                                {post.hook.length} / 140
                                             </span>
                                             <button
                                                 onClick={() => handleMagicHook(index)}
                                                 disabled={loadingHooks[index]}
-                                                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-md transition-colors group/magic"
+                                                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all group/magic"
                                                 title="Generate Magic Hooks"
                                             >
                                                 {loadingHooks[index] ? (
-                                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                                                    <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
                                                 ) : (
-                                                    <Sparkles className="w-3.5 h-3.5 text-blue-500/50 group-hover/magic:text-blue-500 transition-colors" />
+                                                    <Sparkles className="w-3 h-3 text-blue-500/50 group-hover/magic:text-blue-500 transition-colors" />
                                                 )}
+                                                <span className="text-[9px] font-bold text-blue-500/50 group-hover/magic:text-blue-500 uppercase tracking-wider">Magic</span>
                                             </button>
                                         </div>
+                                    </div>
+                                    <div className="relative group/edit">
+                                        <textarea
+                                            value={post.hook}
+                                            onChange={(e) => handleEdit(index, "hook", e.target.value)}
+                                            className={cn(
+                                                "w-full p-4 rounded-2xl font-medium text-sm border transition-all leading-relaxed resize-none outline-none",
+                                                post.hook.length > 140
+                                                    ? "bg-red-50/30 dark:bg-red-500/5 border-red-100 dark:border-red-500/20 text-red-900 dark:text-red-100 focus:border-red-200"
+                                                    : "bg-yellow-50/30 dark:bg-yellow-500/5 border-yellow-100 dark:border-yellow-500/20 text-neutral-900 dark:text-yellow-100 focus:border-yellow-200"
+                                            )}
+                                            rows={3}
+                                            placeholder="Write your hook..."
+                                        />
 
                                         <AnimatePresence>
                                             {hookOptions[index] && (
@@ -281,35 +291,50 @@ export default function PostDisplay({ posts, topic, tone, modelUsed }: PostDispl
                                         </AnimatePresence>
 
                                         {post.hook.length > 140 && (
-                                            <div className="absolute -bottom-5 left-0 text-[10px] font-medium text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                                                <span>⚠️ Likely cut off on mobile preview</span>
+                                            <div className="mt-2 text-[9px] font-bold text-red-500 flex items-center gap-1.5 uppercase tracking-tighter animate-in fade-in slide-in-from-top-1 px-1">
+                                                <div className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
+                                                <span>Likely cut off on mobile preview</span>
                                             </div>
                                         )}
                                     </div>
 
-                                    <textarea
-                                        value={post.body}
-                                        onChange={(e) => handleEdit(index, "body", e.target.value)}
-                                        className="w-full bg-transparent text-neutral-700 dark:text-neutral-300 p-3 rounded-xl text-sm border-2 border-transparent focus:border-neutral-100 dark:focus:border-neutral-800 outline-none resize-none transition-all flex-grow leading-relaxed font-sans"
-                                        rows={8}
-                                        placeholder="Write your body..."
-                                    />
+                                    <div className="mt-6">
+                                        <div className="flex items-center gap-2 mb-2 px-1">
+                                            <div className="w-1 h-3 bg-neutral-300 dark:bg-neutral-700 rounded-full" />
+                                            <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">The Insight</span>
+                                        </div>
+                                        <textarea
+                                            value={post.body}
+                                            onChange={(e) => handleEdit(index, "body", e.target.value)}
+                                            className="w-full bg-neutral-50/50 dark:bg-white/5 border border-transparent focus:border-neutral-200 dark:focus:border-neutral-800 text-neutral-700 dark:text-neutral-300 p-4 rounded-2xl text-sm outline-none resize-none transition-all flex-grow leading-relaxed font-sans"
+                                            rows={8}
+                                            placeholder="Write your body..."
+                                        />
+                                    </div>
 
-                                    <textarea
-                                        value={post.cta}
-                                        onChange={(e) => handleEdit(index, "cta", e.target.value)}
-                                        className="w-full bg-blue-50/30 dark:bg-blue-500/5 text-blue-600 dark:text-blue-400 p-3 rounded-xl font-medium text-sm border-2 border-transparent focus:border-blue-100 dark:focus:border-blue-500/20 outline-none resize-none transition-all leading-relaxed"
-                                        rows={2}
-                                        placeholder="Add a call to action..."
-                                    />
+                                    <div className="mt-6">
+                                        <div className="flex items-center gap-2 mb-2 px-1">
+                                            <div className="w-1 h-3 bg-blue-500/50 rounded-full" />
+                                            <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.2em]">The Close</span>
+                                        </div>
+                                        <textarea
+                                            value={post.cta}
+                                            onChange={(e) => handleEdit(index, "cta", e.target.value)}
+                                            className="w-full bg-blue-50/50 dark:bg-blue-500/5 text-blue-600 dark:text-blue-400 p-4 rounded-2xl font-medium text-sm border border-blue-100/50 dark:border-blue-500/10 focus:border-blue-200 dark:focus:border-blue-500/20 outline-none resize-none transition-all leading-relaxed"
+                                            rows={2}
+                                            placeholder="Add a call to action..."
+                                        />
+                                    </div>
 
-                                    <textarea
-                                        value={post.hashtags}
-                                        onChange={(e) => handleEdit(index, "hashtags", e.target.value)}
-                                        className="w-full bg-transparent text-neutral-400 p-3 rounded-xl text-xs border-2 border-transparent focus:border-neutral-100 dark:focus:border-neutral-800 outline-none resize-none transition-all leading-relaxed"
-                                        rows={1}
-                                        placeholder="#hashtags"
-                                    />
+                                    <div className="mt-4">
+                                        <textarea
+                                            value={post.hashtags}
+                                            onChange={(e) => handleEdit(index, "hashtags", e.target.value)}
+                                            className="w-full bg-transparent text-neutral-400 p-3 rounded-xl text-[10px] font-medium border-none focus:ring-0 outline-none resize-none transition-all leading-relaxed italic"
+                                            rows={1}
+                                            placeholder="#hashtags"
+                                        />
+                                    </div>
                                 </div>
                             ) : (
                                 <LinkedInPreview

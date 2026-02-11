@@ -20,7 +20,7 @@ export default function Home() {
   const [currentTone, setCurrentTone] = useState<Tone>("Professional");
   const [modelUsed, setModelUsed] = useState<string | null>(null);
 
-  const handleGenerate = async (topic: string, tone: string, length: "Short" | "Medium" | "Long", referencePost?: string) => {
+  const handleGenerate = async (topic: string, tone: string, length: "Short" | "Medium" | "Long", referencePost?: string, templateId?: string) => {
     setIsGenerating(true);
     setError(null);
     setGeneratedPosts([]);
@@ -31,7 +31,7 @@ export default function Home() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, tone: tone as Tone, length, referencePost }),
+        body: JSON.stringify({ topic, tone: tone as Tone, length, referencePost, templateId }),
       });
 
       const data = await response.json();
@@ -50,7 +50,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-50 dark:bg-black flex flex-col items-center justify-start pt-20 px-4 relative overflow-hidden">
+    <main className="min-h-screen bg-neutral-50 dark:bg-black flex flex-col items-center justify-start pt-12 md:pt-20 px-4 relative overflow-hidden transition-all duration-700">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-neutral-50 dark:to-black z-10" />
         <GridPattern
@@ -65,14 +65,9 @@ export default function Home() {
       <div className="w-full max-w-4xl mx-auto space-y-8 relative z-10">
         {/* Header */}
         {/* Header */}
-        <div className="relative text-center space-y-4 mb-12">
-          <div className="flex justify-between items-center w-full mb-8 md:absolute md:top-0 md:mb-0">
-            {/* Mobile Logo (visible only on small screens) */}
-            <div className="md:hidden">
-              <span className="font-bold text-xl tracking-tight">PostCraft</span>
-            </div>
-
-            <div className="flex items-center gap-2 ml-auto">
+        <div className={generatedPosts.length > 0 ? "relative text-center space-y-2 mb-8 transition-all duration-500" : "relative text-center space-y-4 mb-12 transition-all duration-500"}>
+          <div className="flex justify-end items-center w-full mb-6 md:absolute md:top-0 md:mb-0">
+            <div className="flex items-center gap-2">
               <PostHistory />
               <ThemeToggle />
             </div>
@@ -81,25 +76,29 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="pt-4 md:pt-0"
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="pt-0"
           >
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 via-neutral-600 to-neutral-900 dark:from-white dark:via-neutral-400 dark:to-white pb-2">
+            <h1 className={generatedPosts.length > 0 ? "text-4xl md:text-5xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-neutral-950 via-neutral-700 to-neutral-900 dark:from-white dark:via-neutral-400 dark:to-neutral-500 pb-2 transition-all duration-500" : "text-6xl md:text-8xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-neutral-950 via-neutral-700 to-neutral-900 dark:from-white dark:via-neutral-400 dark:to-neutral-500 pb-2 transition-all duration-500"}>
               PostCraft
             </h1>
           </motion.div>
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto font-light px-4"
+            transition={{ duration: 1, delay: 0.4 }}
+            className={generatedPosts.length > 0 ? "hidden" : "text-lg md:text-xl text-neutral-500 dark:text-neutral-400 max-w-xl mx-auto font-light px-4 leading-relaxed"}
           >
             Turn your ideas into polished LinkedIn posts in seconds.
           </motion.p>
         </div>
 
         {/* Input Section */}
-        <AI_Input_Search onGenerate={handleGenerate} isGenerating={isGenerating} />
+        <AI_Input_Search
+          onGenerate={handleGenerate}
+          isGenerating={isGenerating}
+          hasResults={generatedPosts.length > 0}
+        />
 
         {/* Loading State */}
         <AnimatePresence>

@@ -192,7 +192,7 @@ export default function AILoadingState() {
 
             // Scroll to the next line
             setScrollPosition((prevPosition) => prevPosition + lineHeight);
-        }, 1500);
+        }, 1000);
 
         return () => clearInterval(advanceTimer);
     }, [

@@ -58,11 +58,45 @@ const TONE_MODIFIERS: Record<Tone, string> = {
   `
 };
 
+export const TEMPLATE_CONFIGS: Record<string, string> = {
+  contrast: `
+    STRUCTURE: The Contrast
+    - Hook: Break a common myth or start with "Most people think X, but the reality is Y."
+    - Body: Explain why the conventional wisdom is wrong and provide your unique perspective.
+    - Close: A punchy "Lesson learned" before the CTA.
+  `,
+  mistake: `
+    STRUCTURE: The Mistake
+    - Hook: Admit to a specific failure or mistake. "I spent 3 years doing X wrong..."
+    - Body: Breakdown the mistake, the turning point, and the specific fix.
+    - Close: A reassuring takeaway for the reader.
+  `,
+  result: `
+    STRUCTURE: The Result
+    - Hook: Lead with a massive outcome or data point. "How we reached X in Y days."
+    - Body: Step-by-step roadmap of exactly how it was achieved.
+    - Close: "Proof that [Method] works."
+  `,
+  toolstack: `
+    STRUCTURE: The Tool Stack
+    - Hook: Total list of tools for a specific goal. "The 5 tools I use to run my 3D studio:"
+    - Body: Categorized list with 1-sentence value for each tool.
+    - Close: Ask for their favorite tool.
+  `,
+  storyarc: `
+    STRUCTURE: The Story Arc
+    - Hook: Paint a "Before" picture. "I was $0 in debt, working 100 hours..."
+    - Body: Describe the struggle, the pivot, and the "After" transformation.
+    - Close: "Don't let X stop you."
+  `
+};
+
 export function buildPrompt(
   topic: string,
   tone: Tone,
   length: "Short" | "Medium" | "Long",
-  referencePost?: string
+  referencePost?: string,
+  templateId?: string
 ): { system: string; user: string } {
   const lengthKey = length.toUpperCase() as keyof typeof POST_LENGTHS;
   const lengthConfig = POST_LENGTHS[lengthKey];
@@ -77,6 +111,15 @@ export function buildPrompt(
     ---
     ${referencePost}
     ---
+    `;
+  }
+
+  if (templateId && TEMPLATE_CONFIGS[templateId]) {
+    dynamicSystemPrompt += `
+
+    STRICT STRUCTURAL INSTRUCTION:
+    You MUST follow this specific post architecture:
+    ${TEMPLATE_CONFIGS[templateId]}
     `;
   }
 

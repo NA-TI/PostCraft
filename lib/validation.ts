@@ -6,6 +6,7 @@ export const generateRequestSchema = z.object({
     tone: z.enum(["Professional", "Friendly", "Smart", "Storytelling"] as const),
     length: z.enum(["Short", "Medium", "Long"] as const).default("Medium"),
     referencePost: z.string().optional(),
+    templateId: z.string().optional(),
 });
 
 export const hookRequestSchema = z.object({

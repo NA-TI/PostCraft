@@ -19,9 +19,9 @@ export async function POST(request: Request) {
             );
         }
 
-        const { topic, tone, length, referencePost } = validation.data;
+        const { topic, tone, length, referencePost, templateId } = validation.data;
 
-        const { system, user } = buildPrompt(topic, tone, length || "Medium", referencePost);
+        const { system, user } = buildPrompt(topic, tone, length || "Medium", referencePost, templateId);
         const result = await generatePostsWithFallback(system, user);
 
         // Add character counts to response
